@@ -103,7 +103,7 @@
     <div id="status-msg" class="status">Configura i dati e clicca Inizializza</div>
 
     <p style="text-align:center; color:#999; font-size:11px; margin-top:25px;">
-        Chogan Demo Environment
+        Chogan Demo Environment chat hide 2
     </p>
   </div>
 
@@ -145,7 +145,10 @@
 
             // 1. EVENTO: Pre-chat
             window.addEventListener("onEmbeddedMessagingReady", () => {
+                
                 console.log(">>> EVENTO: Messaging Ready --> Invio parametri...");
+              embeddedservice_bootstrap.settings.hideChatButtonOnLoad = true;
+
                 try {
                     const fName = document.getElementById('input-fullname').value;
                     const uType = document.getElementById('input-type').value;
