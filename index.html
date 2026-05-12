@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title> ZED IN GIT DEV2 HIDE CHAT </title>
+  <title> ZED IN GIT DEV2 </title>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f4f6f9; margin: 0; }
     .box { background: #fff; padding: 30px; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: left; width: 380px; }
@@ -31,26 +31,9 @@
     .status { font-size: 13px; text-align: center; color: #0969da; margin-top: 15px; font-weight: 600; min-height: 20px;}
 
     /* =========================================
-       CSS MAGICO PER SOVRASCRIVERE SALESFORCE
+       STILE DEL TUO BOTTONE CUSTOM (LOGO)
+       Nota: Nessun CSS hack su Salesforce qui.
        ========================================= */
-
-    /* 1. Nascondiamo visivamente il componente SF di default senza romperlo */
-    embedded-messaging-bootstrap {
-        opacity: 0 !important;
-        pointer-events: none !important;
-        visibility: hidden !important;
-        transition: opacity 0.3s ease;
-    }
-
-    /* 2. Classe che aggiungeremo da JS per rivelare la finestra chat una volta aperta */
-    embedded-messaging-bootstrap.chat-attiva {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        visibility: visible !important;
-        z-index: 99999 !important;
-    }
-
-    /* 3. Stile per il tuo nuovo bottone con logo (usiamo Flexbox per centrare l'SVG) */
     #customChatLauncher {
         position: fixed;
         bottom: 20px;
@@ -76,9 +59,8 @@
     #customChatLauncher svg {
         width: 32px;
         height: 32px;
-        fill: white; /* Icona bianca */
+        fill: white; 
     }
-    /* ========================================= */
   </style>
 </head>
 <body>
@@ -125,7 +107,7 @@
     </p>
   </div>
 
-  <!-- IL TUO NUOVO BOTTONE: Uso un'icona SVG inline così non si rompe MAI -->
+  <!-- IL TUO NUOVO BOTTONE: Icona SVG inline -->
   <div id="customChatLauncher" onclick="apriChatSalesforce()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/>
@@ -147,8 +129,6 @@
         document.getElementById('input-nationality').disabled = true;
 
         const selectedLang = document.getElementById('language-picker').value;
-        console.log("--> LINGUA SELEZIONATA:", selectedLang);
-
         initEmbeddedMessaging(selectedLang);
     }
 
@@ -158,9 +138,14 @@
         try {
             embeddedservice_bootstrap.settings.language = langCode;
             
+            // ========================================================
+            // SOLUZIONE UFFICIALE: Nasconde il bottone di Salesforce al caricamento
+            // ========================================================
+            embeddedservice_bootstrap.settings.hideChatButtonOnLoad = true;
+
+            // 1. EVENTO: Pre-chat
             window.addEventListener("onEmbeddedMessagingReady", () => {
                 console.log(">>> EVENTO: Messaging Ready --> Invio parametri...");
-                
                 try {
                     const fName = document.getElementById('input-fullname').value;
                     const uType = document.getElementById('input-type').value;
@@ -173,19 +158,9 @@
                         "nationality": uNat,
                         "userId": uId,
                     };
-                  
 
                     embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
-                    embeddedservice_bootstrap.settings.hideChatButtonOnLoad = true;
-
                     
-                    document.getElementById('status-msg').innerText = "Chat Pronta (" + langCode + ")";
-                    document.getElementById('status-msg').style.color = "green";
-                    document.getElementById('start-btn').style.display = 'none';
-
-                    // Mostriamo la nostra bolla custom
-                    document.getElementById('customChatLauncher').style.display = 'flex';
-
                 } catch (e) {
                     console.error("Errore hidden fields:", e);
                     document.getElementById('status-msg').innerText = "Errore Parametri";
@@ -193,19 +168,29 @@
                 }
             });
 
-            // GESTIONE CHIUSURA: Se l'utente minimizza o chiude la chat, rimettiamo il nostro logo
+            // 2. EVENTO: Il motore del bottone è stato creato
+            // È il momento giusto per mostrare il NOSTRO bottone
+            window.addEventListener("onEmbeddedMessagingButtonCreated", () => {
+                console.log(">>> EVENTO: Button Created --> Chat pronta all'uso");
+                
+                document.getElementById('status-msg').innerText = "Chat Pronta (" + langCode + ")";
+                document.getElementById('status-msg').style.color = "green";
+                document.getElementById('start-btn').style.display = 'none';
+
+                // Mostriamo la NOSTRA bolla custom (quella di SF rimarrà nascosta nativamente)
+                document.getElementById('customChatLauncher').style.display = 'flex';
+            });
+
+            // 3. GESTIONE CHIUSURA: Rimettiamo il nostro logo se l'utente abbassa la chat
             window.addEventListener("onEmbeddedMessagingWindowMinimized", () => {
-                const sfWidget = document.querySelector('embedded-messaging-bootstrap');
-                if (sfWidget) sfWidget.classList.remove('chat-attiva');
                 document.getElementById('customChatLauncher').style.display = 'flex';
             });
 
             window.addEventListener("onEmbeddedMessagingWindowClosed", () => {
-                const sfWidget = document.querySelector('embedded-messaging-bootstrap');
-                if (sfWidget) sfWidget.classList.remove('chat-attiva');
                 document.getElementById('customChatLauncher').style.display = 'flex';
             });
 
+            // INIZIALIZZAZIONE EFFETTIVA
             embeddedservice_bootstrap.init(
                 '00DUA000003hFV7',
                 'GitZedv2Upload',
@@ -222,22 +207,16 @@
     };
 
     // ========================================================
-    // APERTURA CHAT E TRANSIZIONE VISIVA
+    // APERTURA CHAT AL CLICK SUL NOSTRO LOGO
     // ========================================================
     function apriChatSalesforce() {
         if (typeof embeddedservice_bootstrap !== 'undefined') {
             
-            // 1. Diamo opacità 1 al contenitore di Salesforce
-            const sfWidget = document.querySelector('embedded-messaging-bootstrap');
-            if (sfWidget) {
-                sfWidget.classList.add('chat-attiva');
-            }
-
-            // 2. Apriamo programmaticamente la chat
+            // Apriamo programmaticamente la chat
             embeddedservice_bootstrap.utilAPI.launchChat()
                 .then(function() {
                     console.log("Chat aperta con successo.");
-                    // 3. Nascondiamo il nostro bottoncino rotondo per evitare sovrapposizioni
+                    // Nascondiamo il nostro bottoncino per non dare fastidio alla finestra aperta
                     document.getElementById('customChatLauncher').style.display = 'none';
                 })
                 .catch(function(error) {
