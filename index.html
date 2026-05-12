@@ -31,6 +31,42 @@
     .btn-start:disabled { background-color: #ccc; cursor: not-allowed; }
 
     .status { font-size: 13px; text-align: center; color: #0969da; margin-top: 15px; font-weight: 600; min-height: 20px;}
+
+    /* =========================================
+       INIZIO CSS AGGIUNTO PER LA CHAT CUSTOM
+       ========================================= */
+
+    /* 1. Nasconde il bottone launcher standard "Ask me anything" di MIAW */
+    #embedded-messaging-bootstrap {
+        display: none !important;
+    }
+
+    /* 2. Stile per il tuo nuovo bottone con logo */
+    #customChatLauncher {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 65px; 
+        height: 65px;
+        cursor: pointer;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        border-radius: 50%;
+        transition: transform 0.2s;
+        display: none; /* Nascosto di default, lo mostriamo da JS dopo l'init */
+        background-color: white; /* Sfondo bianco per il logo */
+    }
+
+    #customChatLauncher:hover {
+        transform: scale(1.1);
+    }
+
+    #customChatLauncher img {
+        width: 100%;
+        height: auto;
+        border-radius: 50%;
+    }
+    /* ========================================= */
   </style>
 </head>
 <body>
@@ -78,6 +114,12 @@
     </p>
   </div>
 
+  <!-- IL TUO NUOVO BOTTONE CON IL LOGO -->
+  <!-- Mettici una url qualsiasi per test, in questo caso un'icona blu pubblica -->
+  <div id="customChatLauncher" onclick="apriChatSalesforce()">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Circle-icons-chat.svg/512px-Circle-icons-chat.svg.png" alt="Chatta con noi" />
+  </div>
+
   <script type='text/javascript'>
     
     function startChatSession() {
@@ -107,8 +149,6 @@
             // 1. IMPOSTAZIONI DEL CANALE (UI del Widget)
             embeddedservice_bootstrap.settings.language = langCode;
             
-            
-
             // 2. GESTIONE EVENTO PRE-CHAT (Per Agentforce)
             window.addEventListener("onEmbeddedMessagingReady", () => {
                 console.log(">>> Rollback --> EVENTO: Messaging Ready --> Invio parametri...");
@@ -126,7 +166,6 @@
                         "userType": uType,
                         "nationality": uNat,
                         "userId": uId,
-
                     };
 
                     embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
@@ -137,15 +176,17 @@
                     document.getElementById('status-msg').style.color = "green";
                     document.getElementById('start-btn').style.display = 'none'; // Nascondi bottone
 
+                    // ========================================================
+                    // NOVITA': Mostriamo la nostra bolla custom appena la chat è pronta
+                    // ========================================================
+                    document.getElementById('customChatLauncher').style.display = 'block';
+
                 } catch (e) {
                     console.error("Errore hidden fields:", e);
                     document.getElementById('status-msg').innerText = "Errore Parametri";
                     document.getElementById('status-msg').style.color = "red";
                 }
             });
-
-
-
 
             // 4. INIZIALIZZAZIONE EFFETTIVA
             embeddedservice_bootstrap.init(
@@ -162,6 +203,21 @@
             document.getElementById('status-msg').innerText = "Errore Init";
         }
     };
+
+    // ========================================================
+    // FUNZIONE PER APRIRE LA CHAT AL CLICK SUL NOSTRO LOGO
+    // ========================================================
+    function apriChatSalesforce() {
+        if (typeof embeddedservice_bootstrap !== 'undefined') {
+            embeddedservice_bootstrap.utilAPI.launchChat()
+                .then(function() {
+                    console.log("Chat aperta con successo tramite bottone custom.");
+                })
+                .catch(function(error) {
+                    console.error("Errore nell'apertura della chat: ", error);
+                });
+        }
+    }
   </script>
   <script type='text/javascript' src='https://chogangroup--devai2.sandbox.my.site.com/ESWGitZedv2Upload1775142397588/assets/js/bootstrap.min.js'></script>
 
