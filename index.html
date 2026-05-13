@@ -30,20 +30,7 @@
 
     .status { font-size: 13px; text-align: center; color: #0969da; margin-top: 15px; font-weight: 600; min-height: 20px;}
 
-    embeddedMessagingFrame,
-    .embeddedMessagingFrame,
-    div[class*="embeddedMessaging"] .fab,
-    .embeddedServiceHelpButton,
-    div[id*="embeddedMessaging"] .slds-utility-bar_container {
-        display: none !important;
-        visibility: hidden !important;
-    }
-
-    body > div[class*="embeddedMessaging"] > button,
-    body > div[class*="embeddedMessaging"] > .fab {
-        display: none !important;
-    }
-
+    /* Custom Launcher */
     #customChatLauncher {
         position: fixed;
         bottom: 20px;
@@ -55,7 +42,7 @@
         box-shadow: 0 6px 16px rgba(0,0,0,0.3);
         border-radius: 50%;
         transition: transform 0.2s, background-color 0.2s;
-        display: none;
+        display: none; /* Nascosto finché la chat non è pronta */
         background-color: #0070d2;
         align-items: center;
         justify-content: center;
@@ -113,7 +100,7 @@
     <div id="status-msg" class="status">Configura i dati e clicca Inizializza</div>
 
     <p style="text-align:center; color:#999; font-size:11px; margin-top:25px;">
-        Chogan Demo Environment chat hide 4 claude
+        Chogan Demo Environment chat hide 4 gemini
     </p>
   </div>
 
@@ -127,49 +114,6 @@
 
   <script type='text/javascript'>
 
-    // Flag globale: quando false, l'observer non nasconde il bottone SF
-    // (necessario durante l'apertura programmatica della chat)
-    let _osservatoreAttivo = true;
-
-    function avviaNascondiBottoneSF() {
-        const observer = new MutationObserver(function(mutations) {
-            if (!_osservatoreAttivo) return; // pausa durante apertura chat
-
-            mutations.forEach(function(mutation) {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) {
-                        const isLauncher =
-                            (node.className && typeof node.className === 'string' &&
-                             node.className.includes('embeddedMessaging')) ||
-                            (node.tagName === 'BUTTON' && node.dataset && node.dataset.buttonid);
-
-                        if (isLauncher) {
-                            const btn = node.querySelector('button') || 
-                                        (node.tagName === 'BUTTON' ? node : null);
-                            if (btn) {
-                                btn.style.setProperty('display', 'none', 'important');
-                                btn.style.setProperty('visibility', 'hidden', 'important');
-                                console.log('[CustomChat] Bottone SF nativo nascosto via MutationObserver');
-                            }
-                            if (node.className && node.className.includes('embeddedMessaging')) {
-                                const launcherBtn = node.querySelector('.fab, [class*="fab"], button[class*="launch"]');
-                                if (launcherBtn) {
-                                    launcherBtn.style.setProperty('display', 'none', 'important');
-                                }
-                            }
-                        }
-                    }
-                });
-            });
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-        console.log('[CustomChat] MutationObserver attivo');
-        return observer;
-    }
-
-    let sfObserver = null;
-
     function startChatSession() {
         const btn = document.getElementById('start-btn');
         btn.disabled = true;
@@ -181,8 +125,6 @@
         document.getElementById('input-id').disabled = true;
         document.getElementById('input-nationality').disabled = true;
 
-        sfObserver = avviaNascondiBottoneSF();
-
         const selectedLang = document.getElementById('language-picker').value;
         initEmbeddedMessaging(selectedLang);
     }
@@ -192,6 +134,8 @@
 
         try {
             embeddedservice_bootstrap.settings.language = langCode;
+            
+            // 1. Diciamo a Salesforce di non caricare il proprio bottone all'avvio
             embeddedservice_bootstrap.settings.hideChatButtonOnLoad = true;
 
             window.addEventListener("onEmbeddedMessagingReady", () => {
@@ -216,22 +160,27 @@
                 document.getElementById('status-msg').innerText = "Chat Pronta (" + langCode + ")";
                 document.getElementById('status-msg').style.color = "green";
                 document.getElementById('start-btn').style.display = 'none';
+                
+                // 2. Mostriamo il nostro bottone Custom
                 document.getElementById('customChatLauncher').style.display = 'flex';
-                _nascondiBottoneSFNelDOM();
+                
+                // Per ulteriore sicurezza, richiamiamo l'API nativa per nascondere il bottone SF
+                embeddedservice_bootstrap.utilAPI.hideChatButton();
             });
 
             window.addEventListener("onEmbeddedMessagingWindowMinimized", () => {
-                _osservatoreAttivo = true; // riattiva observer
+                // 3. Quando l'utente minimizza, assicuriamoci di nascondere il nativo e rimostrare il custom
                 document.getElementById('customChatLauncher').style.display = 'flex';
-                _nascondiBottoneSFNelDOM();
+                embeddedservice_bootstrap.utilAPI.hideChatButton();
             });
 
             window.addEventListener("onEmbeddedMessagingWindowClosed", () => {
-                _osservatoreAttivo = true; // riattiva observer
+                // 4. Stessa cosa quando viene chiusa
                 document.getElementById('customChatLauncher').style.display = 'flex';
-                _nascondiBottoneSFNelDOM();
+                embeddedservice_bootstrap.utilAPI.hideChatButton();
             });
 
+            // Inizializzazione Core
             embeddedservice_bootstrap.init(
                 '00DUA000003hFV7',
                 'GitZedv2Upload',
@@ -247,49 +196,15 @@
         }
     }
 
-    function _nascondiBottoneSFNelDOM() {
-        const contenitori = document.querySelectorAll('div[class*="embeddedMessaging"]');
-        contenitori.forEach(function(div) {
-            const bottoni = div.querySelectorAll('button.fab, button[class*="launch"], button[class*="Fab"]');
-            bottoni.forEach(function(b) {
-                b.style.setProperty('display', 'none', 'important');
-                b.style.setProperty('visibility', 'hidden', 'important');
-            });
-        });
-    }
-
     function apriChatSalesforce() {
         if (typeof embeddedservice_bootstrap === 'undefined') return;
 
-        // 1. Metti in pausa l'observer così non blocca il bottone SF
-        _osservatoreAttivo = false;
+        // Nascondiamo il nostro bottone custom mentre la chat è aperta
+        document.getElementById('customChatLauncher').style.display = 'none';
 
-        // 2. Chiedi a SF di rendere attivo il bottone
-        embeddedservice_bootstrap.utilAPI.showChatButton();
-
-        // 3. Aspetta il rendering, rimuovi il display:none inline che avevamo messo
-        //    e simula il click sul bottone SF nativo
-        setTimeout(function() {
-            let sfButton = null;
-
-            const contenitori = document.querySelectorAll('div[class*="embeddedMessaging"]');
-            contenitori.forEach(function(div) {
-                div.querySelectorAll('button').forEach(function(b) {
-                    b.style.removeProperty('display');
-                    b.style.removeProperty('visibility');
-                    sfButton = b;
-                });
-            });
-
-            if (sfButton) {
-                console.log('[CustomChat] Click programmatico sul bottone SF');
-                sfButton.click();
-                document.getElementById('customChatLauncher').style.display = 'none';
-            } else {
-                console.error('[CustomChat] Bottone SF non trovato nel DOM');
-                _osservatoreAttivo = true; // ripristina observer in caso di errore
-            }
-        }, 300);
+        // 5. Usa l'API NATIVA per lanciare la finestra al posto di simulare il .click()
+        console.log('[CustomChat] Lancio della chat via API nativa');
+        embeddedservice_bootstrap.utilAPI.launchChat();
     }
 
   </script>
