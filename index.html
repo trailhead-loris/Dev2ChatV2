@@ -100,7 +100,7 @@
     <div id="status-msg" class="status">Configura i dati e clicca Inizializza</div>
 
     <p style="text-align:center; color:#999; font-size:11px; margin-top:25px;">
-        Chogan Demo Environment chat hide 4 gemini
+        Chogan Demo Environment chat hide 5 agentforce
     </p>
   </div>
 
@@ -167,12 +167,14 @@
                 // Per ulteriore sicurezza, richiamiamo l'API nativa per nascondere il bottone SF
                 embeddedservice_bootstrap.utilAPI.hideChatButton();
             });
-
             window.addEventListener("onEmbeddedMessagingWindowMinimized", () => {
-                // 3. Quando l'utente minimizza, assicuriamoci di nascondere il nativo e rimostrare il custom
-                document.getElementById('customChatLauncher').style.display = 'flex';
-                embeddedservice_bootstrap.utilAPI.hideChatButton();
+                setTimeout(() => {
+                    console.log(">>> EVENTO: Window Minimized - Hiding Chat Button");
+                    document.getElementById('customChatLauncher').style.display = 'flex';
+                    embeddedservice_bootstrap.utilAPI.hideChatButton();
+                }, 100);
             });
+
 
             window.addEventListener("onEmbeddedMessagingWindowClosed", () => {
                 // 4. Stessa cosa quando viene chiusa
