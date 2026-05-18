@@ -100,7 +100,7 @@
     <div id="status-msg" class="status">Configura i dati e clicca Inizializza</div>
 
     <p style="text-align:center; color:#999; font-size:11px; margin-top:25px;">
-        Chogan Demo Environment chat hide 5 agentforce
+        Chogan Demo Environment chat hide 6 agentforce
     </p>
   </div>
 
@@ -169,7 +169,7 @@
             });
             window.addEventListener("onEmbeddedMessagingWindowMinimized", () => {
                 setTimeout(() => {
-                    console.log(">>> EVENTO: Window Minimized - Hiding Chat Button");
+                    console.log(">>> EVENTO: Window Minimized - Hiding Chat Button  - onEmbeddedMessagingWindowMinimized");
                     document.getElementById('customChatLauncher').style.display = 'flex';
                     embeddedservice_bootstrap.utilAPI.hideChatButton();
                 }, 100);
